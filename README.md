@@ -3,7 +3,7 @@
 
 Sample procedure to use curl to make a gRPC call.
 
-[gRPC](https://grpc.io/) is build on top of HTTP2 and is used to make remote procedure calls using [protocol buffers](https://developers.google.com/protocol-buffers/).
+[gRPC](https://grpc.io/) is built on top of HTTP2 and is used to make remote procedure calls using [protocol buffers](https://developers.google.com/protocol-buffers/).
 
 gRPC by design is fast, efficient, extensible and portable across many languages.  The only real way to invoke the remote procedure is to use a generated gRPC client which 
 internally does all the marshalling to encode the protbuf messages into gRPC's wire format:
