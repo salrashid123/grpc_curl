@@ -13,7 +13,7 @@ internally does all the marshalling to encode the protbuf messages into gRPC's w
 
 The procedure described below is a mechanism to invoke a remote GRPC call using and [http2-enabled curl](https://curl.haxx.se/docs/http2.html) and [nghttp2](https://nghttp2.org/) client alone.
 
-This does not serve any real practial purposes other than an investigation into dissecting what goes on in the RPC.  The only usage for this is if running a full
+This does not serve any real practical purposes other than an investigation into dissecting what goes on in the RPC.  The only usage for this is if running a full
 gRPC client is not possible and what is available is the serialized protocol buffer message to transmit.
 
 ---
@@ -93,7 +93,7 @@ The following python code write a protobuf message and converts it to the wirefo
 def w(filename):
   req = echo_pb2.EchoRequest(firstname='john', lastname='doe')
   msg = binascii.b2a_hex(req.SerializeToString())
-  frame =  '0000' + hex(len(msg)/2).lstrip("0x").zfill(6) + msg
+  frame =  '00' + hex(len(msg)/2).lstrip("0x").zfill(8) + msg
   print 'Raw Encode: ' + frame
   f = open(filename, "wb+")
   f.write(binascii.a2b_hex(frame))
@@ -132,7 +132,7 @@ then
 
 ```python
 >>> msg = '0a046a6f686e1203646f65'
->>> print '0000' + hex(len(msg)/2).lstrip("0x").zfill(6) + msg
+>>> print '00' + hex(len(msg)/2).lstrip("0x").zfill(8) + msg
 000000000b0a046a6f686e1203646f65
 ```
 
@@ -150,16 +150,16 @@ Message → *{binary octet}
 
 ```
 compression:
-   00000
+   00
 message-length =>11(decimal) octets =>b(hex)
-   00000b
+   0000000b
 msg:
    0a046a6f686e1203646f65 
 ```
 
 so the Delimited-Message is
 ```
-0000000000b0a046a6f686e1203646f65
+000000000b0a046a6f686e1203646f65
 ```
 
 ## Transmit the wireformat binary file
@@ -212,9 +212,9 @@ The response message is alo in formatted so do the inverse of encoding
 ```
 
 which is:
-- compression : 0000
+- compression : 00
 
-- message length:  000012 ->  18 decimal
+- message length:  00000012 ->  18 decimal
 
 - message: 0a1048656c6c6f2c206a6f686e20646f6521
 
