@@ -109,7 +109,7 @@ python message_util.py write frame.bin
 or via docker with a  mapped volume:
 
 ```
-docker run --net=host -v `pwd`:/app/ -t salrashid123/grpc_server python message_util.py read frame.bin
+docker run --net=host -v `pwd`:/app/ -t salrashid123/grpc_server python message_util.py write frame.bin
 ```
 
 The above protobuf writes directly to a binary file and encodes direct.  For manual encoding to see what this is doing:
@@ -245,6 +245,12 @@ def r(filename):
   print 'Proto Decode: ' + r.message
 ```
 
+or via mapped volume on docker:
+
+```
+docker run --net=host -v `pwd`:/app/ -t salrashid123/grpc_server python message_util.py read /app/resp.bin
+```
+
 ---
 
 ### Invoking using the gRPC clients
@@ -275,7 +281,7 @@ docker run -p 50051:50051 salrashid123/grpc_curl  python /app/server.py
 
 Client
 ```
- docker run --net=host -t salrashid123/grpc_curl  python /app/client.py main.esodemoapp2.com 50051
+docker run --net=host -t salrashid123/grpc_curl  python /app/client.py main.esodemoapp2.com 50051
 ```
 
 
