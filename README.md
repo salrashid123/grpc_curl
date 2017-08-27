@@ -109,7 +109,7 @@ python message_util.py write frame.bin
 or via docker with a  mapped volume:
 
 ```
-docker run --net=host -v `pwd`:/app/ -t salrashid123/grpc_server python message_util.py write frame.bin
+docker run -v `pwd`:/tmp/ -t salrashid123/grpc_curl python /app/message_util.py write /tmp/frame.bin
 ```
 
 The above protobuf writes directly to a binary file and encodes direct.  For manual encoding to see what this is doing:
@@ -238,7 +238,7 @@ def r(filename):
   wire_msg = binascii.b2a_hex(f.read())
   f.close()
   print 'Got wire_message: ' + wire_msg
-  message_length = wire_msg[4:10]
+  message_length = wire_msg[2:10]
   msg = wire_msg[10:10+int(message_length, 16)*2]
   r = echo_pb2.EchoReply()
   r.ParseFromString(binascii.a2b_hex(msg))
@@ -248,7 +248,7 @@ def r(filename):
 or via mapped volume on docker:
 
 ```
-docker run --net=host -v `pwd`:/app/ -t salrashid123/grpc_server python message_util.py read /app/resp.bin
+docker run -v `pwd`:/tmp/ -t salrashid123/grpc_curl python /app/message_util.py read /tmp/resp.bin
 ```
 
 ---
