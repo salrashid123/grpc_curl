@@ -162,6 +162,21 @@ so the Delimited-Message is
 000000000b0a046a6f686e1203646f65
 ```
 
+## Run a gRPC server
+
+You can either run the gRPC server directly if you have gRPC tools available:
+
+```
+cd src
+python server.py
+```
+
+or via dockerfile
+
+```
+docker run -p 50051:50051 salrashid123/grpc_curl  python /app/server.py
+```
+
 ## Transmit the wireformat binary file
 
 
@@ -172,6 +187,13 @@ curl -v  -k --raw -X POST --http2  -H "Content-Type: application/grpc" -H "TE: t
 
 nghttp -v -H ":method: POST" -H "Content-Type: application/grpc" -H "TE: trailers" --data=frame.bin https://main.esodemoapp2.com:50051/echo.EchoServer/SayHello
 ```
+
+or with the dockerfile
+
+```
+docker run --net=host  -v `pwd`:/tmp/ salrashid123/grpc_curl curl -v  -k --raw -X POST --http2  -H "Content-Type: application/grpc" -H "TE: trailers" --data-binary @/tmp/frame.bin https://main.esodemoapp2.com:50051/echo.EchoServer/SayHello -o /tmp/resp.bin
+```
+
 
 Note: main.esodemoapp2.com matches the certificates SAN and points back to localhost:
 
