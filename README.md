@@ -385,6 +385,76 @@ $ echo 0a1c53747265616d696e672048656c6c6f20322c206a6f686e20646f6521 | xxd -r -p 
 ```
 
 
+### Using Golang http2 client 
+
+```Golang
+package main
+
+import (
+	"bytes"
+	"crypto/tls"
+	"encoding/hex"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+
+	"golang.org/x/net/http2"
+)
+
+func main() {
+	client := http.Client{
+		Transport: &http2.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+
+	dat, err := ioutil.ReadFile("frame.bin")
+	if err != nil {
+		panic(err)
+	}
+
+	url := "https://main.esodemoapp2.com:50051/echo.EchoServer/SayHello"
+	fmt.Println("URL:>", url)
+
+	req, err := http.NewRequest("POST", url, bytes.NewReader(dat))
+	if err != nil {
+		panic(err)
+	}
+	req.Header.Set("TE", "trailers")
+	req.Header.Set("Content-Type", "application/grpc")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+
+	defer resp.Body.Close()
+	fmt.Println("response Status:", resp.Status)
+	fmt.Println("response Headers:", resp.Header)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("response Body:", hex.Dump(body))
+
+}
+```
+
+gives
+
+```
+$ go run src/main.go 
+URL:> https://main.esodemoapp2.com:50051/echo.EchoServer/SayHello
+response Status: 200 OK
+response Headers: map[Content-Type:[application/grpc] Grpc-Accept-Encoding:[identity,deflate,gzip]]
+response Body: 00000000  00 00 00 00 12 0a 10 48  65 6c 6c 6f 2c 20 6a 6f  |.......Hello, jo|
+00000010  68 6e 20 64 6f 65 21                              |hn doe!|
+```
+
+
+
 ### Using python hyper client 
 
 [hyper](https://hyper.readthedocs.io/en/latest/) is an experimental http2 client for python.  You can use this as well but at the time of writing 8/25/17, I have not been enable
