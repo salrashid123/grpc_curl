@@ -20,9 +20,60 @@ You can run the sample here by either installing protobuf and gRPC or entirely t
 
 ---
 
-## Installing curl and nghttp2
+## QuickStart using docker
 
-First step is to install curl and/or nghttp2 clients that are http/2 aware.
+[src/Dockerfile](src/Dockerfile) image includes the precompiled gRPC python client/server and curl+http2 clients.   If you want, you can use this docker file entirely
+to test with. 
+
+
+### First familiarize and verify curl and nghttp2 works from within  the container:
+
+```
+docker run salrashid123/grpc_curl curl -v --http2 https://www.google.com/
+docker run salrashid123/grpc_curl nghttp -vn https://www.google.com/
+```
+
+### Make the binary file with the delimited gRPC message:
+
+```
+mkdir gcurl
+
+docker run -v `pwd`:/tmp/gcurl/ -t salrashid123/grpc_curl python /app/message_util.py write /tmp/gcurl/frame.bin
+```
+
+### Start the gRPC server:
+
+```
+docker run -p 50051:50051 salrashid123/grpc_curl  python /app/server.py
+```
+
+### Invoke the gRPC server with curl:
+
+```
+docker run -v `pwd`:/tmp/gcurl/ \
+   --add-host main.esodemoapp2.com:127.0.0.1 \
+   --net=host  salrashid123/grpc_curl \
+      curl  -v  -k --raw -X POST --http2  \
+         -H "Content-Type: application/grpc" \
+         -H "TE: trailers" \
+         --data-binary @/tmp/gcurl/frame.bin \
+         https://main.esodemoapp2.com:50051/echo.EchoServer/SayHello -o /tmp/gcurl/resp.bin
+```
+
+
+### Verify the response message:
+
+```
+ docker run -v `pwd`:/tmp/gcurl/  -t salrashid123/grpc_curl python /app/message_util.py read /tmp/gcurl/resp.bin
+```
+
+## Invoke gRPC with curl locally
+
+The following steps outlines how to call the gRPC server with curl if curl, protoc, gRPC server runs localy
+
+### Installing curl and nghttp2
+
+If you would rather see what is happening in detail, the first step is to install curl and/or nghttp2 clients that are http/2 aware.
 
 
 ```bash
@@ -61,17 +112,10 @@ curl -v --http2 https://www.google.com/
 * Connection state changed (HTTP/2 confirmed)
 ```
 
-Alternatively, you can use the docker image which already has curl, nghttp, protoc, python gRPC clients and servers installed:
-
-```bash
-$ docker run salrashid123/grpc_curl curl -v --http2 https://www.google.com/
-
-$ docker run salrashid123/grpc_curl nghttp -vn https://www.google.com/
-```
 
 ---
 
-## Installing gRPC support for python
+### Installing gRPC support for python
 
 Set up a client to run the gRPC server locally as well as the client to generate and save the protobuf files.
 
@@ -113,13 +157,8 @@ to invoke this command, simply run:
 python message_util.py write frame.bin
 ```
 
-or via docker with a mapped volume:
 
-```
-docker run -v `pwd`:/tmp/ -t salrashid123/grpc_curl python /app/message_util.py write /tmp/frame.bin
-```
-
-The above snippet and docker command writes the message to a binary file in your local dirctory.  For manual encoding to wireformat starting with just the protobuf:
+The above snippet writes the message to a binary file in your local directory.  For manual encoding to wireformat starting with just the protobuf:
 
 Start with the protbuf in a file by itself (no encoding done as above; just save a binary file with req.SerializeToString())
 
@@ -170,7 +209,7 @@ so the Delimited-Message is
 000000000b0a046a6f686e1203646f65
 ```
 
-## Run a gRPC server
+### Run a gRPC server
 
 You can either run the gRPC server directly if you have gRPC tools available:
 
@@ -179,13 +218,7 @@ cd src
 python server.py
 ```
 
-or via dockerfile
-
-```
-docker run -p 50051:50051 salrashid123/grpc_curl  python /app/server.py
-```
-
-## Transmit the wireformat binary file
+### Transmit the wireformat binary file
 
 
 Now that we have a file 'frame.bin' which is the data we want to transmit and save the output to 'resp.bin':
@@ -195,19 +228,6 @@ curl -v  -k --raw -X POST --http2  -H "Content-Type: application/grpc" -H "TE: t
 
 nghttp -v -H ":method: POST" -H "Content-Type: application/grpc" -H "TE: trailers" --data=frame.bin https://main.esodemoapp2.com:50051/echo.EchoServer/SayHello
 ```
-
-or with the dockerfile
-
-```
-docker run --net=host  \
-  -v `pwd`:/tmp/ salrashid123/grpc_curl \
-  curl -v  -k --raw -X POST --http2  \
-    -H "Content-Type: application/grpc" \
-    -H "TE: trailers" \
-    --data-binary @/tmp/frame.bin \
-    https://main.esodemoapp2.com:50051/echo.EchoServer/SayHello -o /tmp/resp.bin
-```
-
 
 Note: main.esodemoapp2.com matches the certificates SAN and points back to localhost:
 
@@ -238,7 +258,7 @@ $ openssl x509 -in server_crt.pem  -text -noout
 ```
 
 
-## Decode the Response
+### Decode the Response
 
 The response message is also in formatted so do the inverse of encoding
 
@@ -281,15 +301,11 @@ def r(filename):
   print 'Proto Decode: ' + r.message
 ```
 
-or via mapped volume on docker:
-
-```
-docker run -v `pwd`:/tmp/ -t salrashid123/grpc_curl python /app/message_util.py read /tmp/resp.bin
-```
-
 ---
 
 ### Invoking using the gRPC clients
+
+The following simply details invoking the gRPC client/server as normal; nothing to do with curl+gRPC
 
 #### Invoking directly
 
@@ -317,7 +333,7 @@ docker run -p 50051:50051 salrashid123/grpc_curl  python /app/server.py
 
 Client
 ```
-docker run --net=host -t salrashid123/grpc_curl  python /app/client.py main.esodemoapp2.com 50051
+docker run --net=host --add-host main.esodemoapp2.com:127.0.0.1 -t salrashid123/grpc_curl  python /app/client.py main.esodemoapp2.com 50051
 ```
 
 
