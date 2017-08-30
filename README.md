@@ -37,8 +37,10 @@ docker run salrashid123/grpc_curl nghttp -vn https://www.google.com/
 
 ```
 mkdir gcurl
-
-docker run -v `pwd`:/tmp/gcurl/ -t salrashid123/grpc_curl python /app/message_util.py write /tmp/gcurl/frame.bin
+cd gcurl
+docker run -v `pwd`:/tmp/gcurl/ \
+    -t salrashid123/grpc_curl \
+    python /app/message_util.py write /tmp/gcurl/frame.bin
 ```
 
 ### Start the gRPC server:
@@ -224,9 +226,17 @@ python server.py
 Now that we have a file 'frame.bin' which is the data we want to transmit and save the output to 'resp.bin':
 
 ```
-curl -v  -k --raw -X POST --http2  -H "Content-Type: application/grpc" -H "TE: trailers" --data-binary @frame.bin https://main.esodemoapp2.com:50051/echo.EchoServer/SayHello -o resp.bin
+curl -v  -k --raw -X POST --http2  \
+    -H "Content-Type: application/grpc" \
+    -H "TE: trailers" \
+    --data-binary @frame.bin \
+       https://main.esodemoapp2.com:50051/echo.EchoServer/SayHello -o resp.bin
 
-nghttp -v -H ":method: POST" -H "Content-Type: application/grpc" -H "TE: trailers" --data=frame.bin https://main.esodemoapp2.com:50051/echo.EchoServer/SayHello
+nghttp -v -H ":method: POST" \
+    -H "Content-Type: application/grpc" \
+    -H "TE: trailers" \
+    --data=frame.bin \
+       https://main.esodemoapp2.com:50051/echo.EchoServer/SayHello
 ```
 
 Note: main.esodemoapp2.com matches the certificates SAN and points back to localhost:
