@@ -38,14 +38,14 @@ _ECHOREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='lastname', full_name='echo.EchoRequest.lastname', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -76,7 +76,7 @@ _ECHOREPLY = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -112,154 +112,37 @@ EchoReply = _reflection.GeneratedProtocolMessageType('EchoReply', (_message.Mess
 _sym_db.RegisterMessage(EchoReply)
 
 
-try:
-  # THESE ELEMENTS WILL BE DEPRECATED.
-  # Please use the generated *_pb2_grpc.py files instead.
-  import grpc
-  from grpc.beta import implementations as beta_implementations
-  from grpc.beta import interfaces as beta_interfaces
-  from grpc.framework.common import cardinality
-  from grpc.framework.interfaces.face import utilities as face_utilities
 
+_ECHOSERVER = _descriptor.ServiceDescriptor(
+  name='EchoServer',
+  full_name='echo.EchoServer',
+  file=DESCRIPTOR,
+  index=0,
+  options=None,
+  serialized_start=102,
+  serialized_end=222,
+  methods=[
+  _descriptor.MethodDescriptor(
+    name='SayHello',
+    full_name='echo.EchoServer.SayHello',
+    index=0,
+    containing_service=None,
+    input_type=_ECHOREQUEST,
+    output_type=_ECHOREPLY,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='SayHelloStream',
+    full_name='echo.EchoServer.SayHelloStream',
+    index=1,
+    containing_service=None,
+    input_type=_ECHOREQUEST,
+    output_type=_ECHOREPLY,
+    options=None,
+  ),
+])
+_sym_db.RegisterServiceDescriptor(_ECHOSERVER)
 
-  class EchoServerStub(object):
-    # missing associated documentation comment in .proto file
-    pass
+DESCRIPTOR.services_by_name['EchoServer'] = _ECHOSERVER
 
-    def __init__(self, channel):
-      """Constructor.
-
-      Args:
-        channel: A grpc.Channel.
-      """
-      self.SayHello = channel.unary_unary(
-          '/echo.EchoServer/SayHello',
-          request_serializer=EchoRequest.SerializeToString,
-          response_deserializer=EchoReply.FromString,
-          )
-      self.SayHelloStream = channel.unary_stream(
-          '/echo.EchoServer/SayHelloStream',
-          request_serializer=EchoRequest.SerializeToString,
-          response_deserializer=EchoReply.FromString,
-          )
-
-
-  class EchoServerServicer(object):
-    # missing associated documentation comment in .proto file
-    pass
-
-    def SayHello(self, request, context):
-      # missing associated documentation comment in .proto file
-      pass
-      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-      context.set_details('Method not implemented!')
-      raise NotImplementedError('Method not implemented!')
-
-    def SayHelloStream(self, request, context):
-      # missing associated documentation comment in .proto file
-      pass
-      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-      context.set_details('Method not implemented!')
-      raise NotImplementedError('Method not implemented!')
-
-
-  def add_EchoServerServicer_to_server(servicer, server):
-    rpc_method_handlers = {
-        'SayHello': grpc.unary_unary_rpc_method_handler(
-            servicer.SayHello,
-            request_deserializer=EchoRequest.FromString,
-            response_serializer=EchoReply.SerializeToString,
-        ),
-        'SayHelloStream': grpc.unary_stream_rpc_method_handler(
-            servicer.SayHelloStream,
-            request_deserializer=EchoRequest.FromString,
-            response_serializer=EchoReply.SerializeToString,
-        ),
-    }
-    generic_handler = grpc.method_handlers_generic_handler(
-        'echo.EchoServer', rpc_method_handlers)
-    server.add_generic_rpc_handlers((generic_handler,))
-
-
-  class BetaEchoServerServicer(object):
-    """The Beta API is deprecated for 0.15.0 and later.
-
-    It is recommended to use the GA API (classes and functions in this
-    file not marked beta) for all further purposes. This class was generated
-    only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0."""
-    # missing associated documentation comment in .proto file
-    pass
-    def SayHello(self, request, context):
-      # missing associated documentation comment in .proto file
-      pass
-      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-    def SayHelloStream(self, request, context):
-      # missing associated documentation comment in .proto file
-      pass
-      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-
-
-  class BetaEchoServerStub(object):
-    """The Beta API is deprecated for 0.15.0 and later.
-
-    It is recommended to use the GA API (classes and functions in this
-    file not marked beta) for all further purposes. This class was generated
-    only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0."""
-    # missing associated documentation comment in .proto file
-    pass
-    def SayHello(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-      # missing associated documentation comment in .proto file
-      pass
-      raise NotImplementedError()
-    SayHello.future = None
-    def SayHelloStream(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-      # missing associated documentation comment in .proto file
-      pass
-      raise NotImplementedError()
-
-
-  def beta_create_EchoServer_server(servicer, pool=None, pool_size=None, default_timeout=None, maximum_timeout=None):
-    """The Beta API is deprecated for 0.15.0 and later.
-
-    It is recommended to use the GA API (classes and functions in this
-    file not marked beta) for all further purposes. This function was
-    generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"""
-    request_deserializers = {
-      ('echo.EchoServer', 'SayHello'): EchoRequest.FromString,
-      ('echo.EchoServer', 'SayHelloStream'): EchoRequest.FromString,
-    }
-    response_serializers = {
-      ('echo.EchoServer', 'SayHello'): EchoReply.SerializeToString,
-      ('echo.EchoServer', 'SayHelloStream'): EchoReply.SerializeToString,
-    }
-    method_implementations = {
-      ('echo.EchoServer', 'SayHello'): face_utilities.unary_unary_inline(servicer.SayHello),
-      ('echo.EchoServer', 'SayHelloStream'): face_utilities.unary_stream_inline(servicer.SayHelloStream),
-    }
-    server_options = beta_implementations.server_options(request_deserializers=request_deserializers, response_serializers=response_serializers, thread_pool=pool, thread_pool_size=pool_size, default_timeout=default_timeout, maximum_timeout=maximum_timeout)
-    return beta_implementations.server(method_implementations, options=server_options)
-
-
-  def beta_create_EchoServer_stub(channel, host=None, metadata_transformer=None, pool=None, pool_size=None):
-    """The Beta API is deprecated for 0.15.0 and later.
-
-    It is recommended to use the GA API (classes and functions in this
-    file not marked beta) for all further purposes. This function was
-    generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"""
-    request_serializers = {
-      ('echo.EchoServer', 'SayHello'): EchoRequest.SerializeToString,
-      ('echo.EchoServer', 'SayHelloStream'): EchoRequest.SerializeToString,
-    }
-    response_deserializers = {
-      ('echo.EchoServer', 'SayHello'): EchoReply.FromString,
-      ('echo.EchoServer', 'SayHelloStream'): EchoReply.FromString,
-    }
-    cardinalities = {
-      'SayHello': cardinality.Cardinality.UNARY_UNARY,
-      'SayHelloStream': cardinality.Cardinality.UNARY_STREAM,
-    }
-    stub_options = beta_implementations.stub_options(host=host, metadata_transformer=metadata_transformer, request_serializers=request_serializers, response_deserializers=response_deserializers, thread_pool=pool, thread_pool_size=pool_size)
-    return beta_implementations.dynamic_stub(channel, 'echo.EchoServer', cardinalities, options=stub_options)
-except ImportError:
-  pass
 # @@protoc_insertion_point(module_scope)

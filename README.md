@@ -33,7 +33,15 @@ docker run salrashid123/grpc_curl curl -v --http2 https://www.google.com/
 docker run salrashid123/grpc_curl nghttp -vn https://www.google.com/
 ```
 
+### Start the gRPC server:
+
+```
+docker run -p 50051:50051 salrashid123/grpc_curl  python /app/server.py
+```
+
 ### Make the binary file with the delimited gRPC message:
+
+In a new window:
 
 ```
 mkdir gcurl
@@ -43,13 +51,9 @@ docker run -v `pwd`:/tmp/gcurl/ \
     python /app/message_util.py write /tmp/gcurl/frame.bin
 ```
 
-### Start the gRPC server:
-
-```
-docker run -p 50051:50051 salrashid123/grpc_curl  python /app/server.py
-```
-
 ### Invoke the gRPC server with curl:
+
+then in the same window as above, transmit the generated file via curl:
 
 ```
 docker run -v `pwd`:/tmp/gcurl/ \
@@ -62,21 +66,44 @@ docker run -v `pwd`:/tmp/gcurl/ \
          https://main.esodemoapp2.com:50051/echo.EchoServer/SayHello -o /tmp/gcurl/resp.bin
 ```
 
+The response is written into ```resp.bin```.
 
 ### Verify the response message:
 
+Use docer to read in and decode ```resp.bin```.
 ```
  docker run -v `pwd`:/tmp/gcurl/  -t salrashid123/grpc_curl python /app/message_util.py read /tmp/gcurl/resp.bin
 ```
 
+ok, so now what you've done is generated a gRPC message, transmitted it via curl and decoded the response..
+
+all of this was done using embedded scripts prettymuch.....so how about doing this by hand?
+
+Lets do just that next:
+
+---
+
 ## Invoke gRPC with curl locally
 
-The following steps outlines how to call the gRPC server with curl if curl, protoc, gRPC server runs localy
+The following steps outlines how to call the gRPC server with curl if curl, protoc, gRPC server runs locally
 
-### Installing curl and nghttp2
+### Installing curl, if necessary
+
 
 If you would rather see what is happening in detail, the first step is to install curl and/or nghttp2 clients that are http/2 aware.
 
+NOTE: recent curl version have --http2 support already
+
+Verify curl is enabled with http/2:
+
+```bash
+curl -v --http2 https://www.google.com/
+* Using HTTP2, server supports multi-use
+* Connection state changed (HTTP/2 confirmed)
+```
+
+
+...otherwise, its lengthy..
 
 ```bash
 apt-get update -y && \
@@ -93,27 +120,6 @@ curl -OL https://curl.haxx.se/download/curl-7.54.0.tar.bz2 && \
     make install && \    
     ldconfig 
 ```
-
-Verify nghttp2 is enabled properly:
-
-```bash
-nghttp -vn https://www.google.com/
-[  0.060] Connected
-[  0.086][NPN] server offers:
-          * grpc-exp
-          * h2
-          * http/1.1
-The negotiated protocol: h2
-```
-
-Verify curl is enabled with http/2:
-
-```bash
-curl -v --http2 https://www.google.com/
-* Using HTTP2, server supports multi-use
-* Connection state changed (HTTP/2 confirmed)
-```
-
 
 ---
 
@@ -188,6 +194,8 @@ then
 echo -n '000000000b0a046a6f686e1203646f65' | xxd -r -p - frame.bin
 ```
 
+What is contained in ```frame.bin``` is the gRPC wireformat message in its required format:
+
 From: [https://grpc.io/docs/guides/wire.html](https://grpc.io/docs/guides/wire.html)
 
 ```
@@ -213,6 +221,8 @@ so the Delimited-Message is
 
 ### Run a gRPC server
 
+Now run the gRPC server again since we want to transmit this:
+
 You can either run the gRPC server directly if you have gRPC tools available:
 
 ```
@@ -225,13 +235,17 @@ python server.py
 
 Now that we have a file 'frame.bin' which is the data we want to transmit and save the output to 'resp.bin':
 
+you can use either curl or nghttp client:
+
 ```
 curl -v  -k --raw -X POST --http2  \
     -H "Content-Type: application/grpc" \
     -H "TE: trailers" \
     --data-binary @frame.bin \
        https://main.esodemoapp2.com:50051/echo.EchoServer/SayHello -o resp.bin
+```
 
+```
 nghttp -v -H ":method: POST" \
     -H "Content-Type: application/grpc" \
     -H "TE: trailers" \
