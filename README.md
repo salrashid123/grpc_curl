@@ -134,11 +134,13 @@ This is preferably done through [virtualenv](https://pypi.python.org/pypi/virtua
 git clone https://github.com/salrashid123/grpc_curl
 cd grpc_curl/src/
 
-virtualenv env --no-site-packages
-source env/bin/activate
-pip install grpcio-tools hexdump
+# Use python3
 
-python -m grpc_tools.protoc -I .  --python_out=. --grpc_python_out=. echo.proto 
+virtualenv env
+source env/bin/activate
+pip3 install grpcio-tools hexdump
+
+python3 -m grpc_tools.protoc -I .  --python_out=. --grpc_python_out=. echo.proto 
 ```
 
 ## Generate the gRPC wireformat binary file
@@ -152,17 +154,21 @@ The following python code creates a protobuf message and converts it to the wire
 def w(filename):
   req = echo_pb2.EchoRequest(firstname='john', lastname='doe')
   msg = binascii.b2a_hex(req.SerializeToString())
-  frame =  '00' + hex(len(msg)/2).lstrip("0x").zfill(8) + msg
-  print 'Raw Encode: ' + frame
+  ## wireformat
+  #frame =  '00' + hex(len(msg)//2).lstrip("0x").zfill(8) + msg.decode("utf-8") 
+  ## raw
+  frame =  msg.decode("utf-8") 
+  print('Raw Encode: ' + frame)
   f = open(filename, "wb+")
   f.write(binascii.a2b_hex(frame))
   f.close()
+
 ```
 
 to invoke this command, simply run:
 
 ```bash
-python message_util.py write frame.bin
+python3 message_util.py write frame.bin
 ```
 
 
@@ -184,9 +190,10 @@ $ echo `xxd -p frame.bin`  | xxd -r -p | protoc --decode_raw
 
 then
 
+edit `message_uti.py`, and set to output and save the wireformat message:
 ```python
 >>> msg = '0a046a6f686e1203646f65'
->>> print '00' + hex(len(msg)/2).lstrip("0x").zfill(8) + msg
+>>> print '00' + hex(len(msg)/2).lstrip("0x").zfill(8) + msg.decode("utf-8") 
 000000000b0a046a6f686e1203646f65
 ```
 
@@ -227,7 +234,7 @@ You can either run the gRPC server directly if you have gRPC tools available:
 
 ```
 cd src
-python server.py
+python3 server.py
 ```
 
 ### Transmit the wireformat binary file
@@ -235,50 +242,16 @@ python server.py
 
 Now that we have a file 'frame.bin' which is the data we want to transmit and save the output to 'resp.bin':
 
-you can use either curl or nghttp client:
+you can use either curl client:
 
-```
-curl -v  -k --raw -X POST --http2  \
+```bash
+curl -v  --raw -X POST --http2  \
+    --cacert CA_crt.pem \
+    --resolve  server.domain.com:50051:127.0.0.1 \
     -H "Content-Type: application/grpc" \
     -H "TE: trailers" \
     --data-binary @frame.bin \
-       https://main.esodemoapp2.com:50051/echo.EchoServer/SayHello -o resp.bin
-```
-
-```
-nghttp -v -H ":method: POST" \
-    -H "Content-Type: application/grpc" \
-    -H "TE: trailers" \
-    --data=frame.bin \
-       https://main.esodemoapp2.com:50051/echo.EchoServer/SayHello
-```
-
-Note: main.esodemoapp2.com matches the certificates SAN and points back to localhost:
-
-```bash
-$ nslookup main.esodemoapp2.com 8.8.8.8
-Server:		8.8.8.8
-Address:	8.8.8.8#53
-
-Non-authoritative answer:
-Name:	main.esodemoapp2.com
-Address: 127.0.0.1
-```
-
-```bash
-$ openssl x509 -in server_crt.pem  -text -noout
-  ...
-   Subject: C=US, ST=California, O=Google, OU=Enterprise, CN=main.esodemoapp2.com
-  ...
-        X509v3 extensions:
-            X509v3 Basic Constraints: 
-                CA:FALSE
-            Netscape Comment: 
-                OpenSSL Generated Certificate
-            X509v3 Subject Alternative Name: 
-                IP Address:192.168.1.3, IP Address:127.0.0.1, DNS:main.esodemoapp2.com
-            X509v3 Key Usage: 
-                Digital Signature, Non Repudiation, Key Encipherment   
+       https://server.domain.com:50051/echo.EchoServer/SayHello -o resp.bin
 ```
 
 
@@ -307,7 +280,7 @@ $ echo 0a1048656c6c6f2c206a6f686e20646f6521 | xxd -r -p | protoc --decode_raw
 You can use the message utility file do this decoding using the protobuf decoder to do the delimited message -> proto decoder:
 
 ```bash
-$ python message_util.py read resp.bin 
+$ python3 message_util.py read resp.bin 
 Got wire_message: 00000000120a1048656c6c6f2c206a6f686e20646f6521
 Proto Decode: Hello, john doe!
 ```
@@ -317,12 +290,12 @@ def r(filename):
   f = open(filename, "rb")
   wire_msg = binascii.b2a_hex(f.read())
   f.close()
-  print 'Got wire_message: ' + wire_msg
+  print('Got wire_message: ' + wire_msg)
   message_length = wire_msg[2:10]
   msg = wire_msg[10:10+int(message_length, 16)*2]
   r = echo_pb2.EchoReply()
   r.ParseFromString(binascii.a2b_hex(msg))
-  print 'Proto Decode: ' + r.message
+  print('Proto Decode: ' + r.message)
 ```
 
 ---
@@ -336,12 +309,14 @@ The following simply details invoking the gRPC client/server as normal; nothing 
 Assuming you have setup the virtualenv and installed grpc tools
 
 ```bash
-python server.py
+python3 server.py
 ```
 then
 
 ```bash
-python client.py --host main.esodemoapp2.com 50051
+# add server.domain.com to /etc/hosts 127.0.0.1
+
+python3 client.py server.domain.com 50051
 ```
 
 
@@ -352,12 +327,12 @@ THe same client-server python gRPC scripts are present in a docker image
 Server:
 
 ```
-docker run -p 50051:50051 salrashid123/grpc_curl  python /app/server.py
+docker run -p 50051:50051 salrashid123/grpc_curl  python3 /app/server.py
 ```
 
 Client
 ```
-docker run --net=host --add-host main.esodemoapp2.com:127.0.0.1 -t salrashid123/grpc_curl  python /app/client.py main.esodemoapp2.com 50051
+docker run --net=host --add-host server.domain.com:127.0.0.1 -t salrashid123/grpc_curl  python3 /app/client.py server.domain.com 50051
 ```
 
 
@@ -394,7 +369,7 @@ curl  -vv -k --raw --http2 \
    -H "Content-Type: application/grpc" \
    -H "TE: trailers" \
    --data-binary @frame.bin \
-   https://main.esodemoapp2.com:50051/echo.EchoServer/SayHelloStream -o resp.bin
+   https://server.domain.com:50051/echo.EchoServer/SayHelloStream -o resp.bin
 ```
 
 where the response is in the format:
@@ -424,97 +399,3 @@ $ echo 0a1c53747265616d696e672048656c6c6f20322c206a6f686e20646f6521 | xxd -r -p 
 1: "Streaming Hello 2, john doe!"
 ```
 
-
-### Using Golang http2 client 
-
-```Golang
-package main
-
-import (
-	"bytes"
-	"crypto/tls"
-	"encoding/hex"
-	"fmt"
-	"io/ioutil"
-	"net/http"
-
-	"golang.org/x/net/http2"
-)
-
-func main() {
-	client := http.Client{
-		Transport: &http2.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-
-	dat, err := ioutil.ReadFile("frame.bin")
-	if err != nil {
-		panic(err)
-	}
-
-	url := "https://main.esodemoapp2.com:50051/echo.EchoServer/SayHello"
-	fmt.Println("URL:>", url)
-
-	req, err := http.NewRequest("POST", url, bytes.NewReader(dat))
-	if err != nil {
-		panic(err)
-	}
-	req.Header.Set("TE", "trailers")
-	req.Header.Set("Content-Type", "application/grpc")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-
-	defer resp.Body.Close()
-	fmt.Println("response Status:", resp.Status)
-	fmt.Println("response Headers:", resp.Header)
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("response Body:", hex.Dump(body))
-
-}
-```
-
-gives
-
-```
-$ go run src/main.go 
-URL:> https://main.esodemoapp2.com:50051/echo.EchoServer/SayHello
-response Status: 200 OK
-response Headers: map[Content-Type:[application/grpc] Grpc-Accept-Encoding:[identity,deflate,gzip]]
-response Body: 00000000  00 00 00 00 12 0a 10 48  65 6c 6c 6f 2c 20 6a 6f  |.......Hello, jo|
-00000010  68 6e 20 64 6f 65 21                              |hn doe!|
-```
-
-
-
-### Using python hyper client 
-
-[hyper](https://hyper.readthedocs.io/en/latest/) is an experimental http2 client for python.  You can use this as well but at the time of writing 8/25/17, I have not been enable
-to negotiate a proper SSL connection ALPN to proceed.
-
-
-```python
-import ssl
-from hyper import HTTPConnection
-
-  context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-  context.load_verify_locations(cafile="CA_crt.pem")
-  context.set_alpn_protocols(['http/1.1', "spdy/1", 'spdy/2', "spdy/3"])
-  conn = HTTPConnection('main.esodemoapp2.com', 50051, ssl_context=context, secure=True)
-  params = binascii.a2b_hex(frame)
-  headers = {"Content-type": "application/grpc", "TE": "trailers"}
-  conn.request(method="POST", url="/echo.EchoServer/SayHello", body=params, headers=headers)
-  resp = conn.get_response()
-  print response.status, response.reason
-  #print(resp.read())
-```
-
----
