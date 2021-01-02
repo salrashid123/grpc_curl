@@ -399,3 +399,36 @@ $ echo 0a1c53747265616d696e672048656c6c6f20322c206a6f686e20646f6521 | xxd -r -p 
 1: "Streaming Hello 2, john doe!"
 ```
 
+### Decoding with wireshark
+
+Wireshark provides mechanisms to decode protobuf messages given the `.proto` file. 
+
+Decoding with wireshark for this specific guide involves two steps since we used TLS and will work when used with `curl`
+
+1. Start gRPC server
+
+2. Start Wireshark
+  Listen on interface `l0` with filter `tcp.port=50051`
+  Configure wirshark's TLS preferences to read Master Keys from `/tmp/keylog.log`
+
+  ![images/wireshark_tls.png](images/wireshark_tls.png)
+
+3.  Instruct curl to output the SSL keys and invoke client
+    We do this so that wireshark can observe the TLS session keys used in the transport
+
+```bash
+export SSLKEYLOGFILE=/tmp/keylog.log
+curl  -vv -k --raw --http2 \
+   -H "Content-Type: application/grpc" \
+   -H "TE: trailers" \
+   --data-binary @frame.bin \
+   https://server.domain.com:50051/echo.EchoServer/SayHelloStream -o resp.bin
+```
+
+4. Decode a given protobuf message
+
+Wireshark should decrypt the TLS messages and then with the protobuf decoder, you should be able to see the actual underlying message
+
+You must provide the path to the `echo.proto` file contained in the repo:
+
+  ![images/wireshark_protobuf.png](images/wireshark_protobuf.png)
