@@ -11,115 +11,12 @@ internally does all the marshalling to encode the protbuf messages into gRPC's w
 - [https://grpc.io/docs/guides/wire.html](https://grpc.io/docs/guides/wire.html)
 
 
-The procedure described below is a mechanism to invoke a remote GRPC call using and [http2-enabled curl](https://curl.haxx.se/docs/http2.html) and [nghttp2](https://nghttp2.org/) client alone.
+The procedure described below is a mechanism to invoke a remote GRPC call using and [http2-enabled curl](https://curl.haxx.se/docs/http2.html) 
 
 This does not serve any real practical purposes other than an investigation into dissecting what goes on in the RPC.  The only usage for this is if running a full
 gRPC client is not possible and what is available is the serialized protocol buffer message to transmit.
 
 You can run the sample here by either installing protobuf and gRPC or entirely through the docker container [salrashid123/grpc_curl](https://hub.docker.com/r/salrashid123/grpc_curl/).
-
----
-
-## QuickStart using docker
-
-[src/Dockerfile](src/Dockerfile) image includes the precompiled gRPC python client/server and curl+http2 clients.   If you want, you can use this docker file entirely
-to test with. 
-
-
-### First familiarize and verify curl and nghttp2 works from within  the container:
-
-```
-docker run salrashid123/grpc_curl curl -v --http2 https://www.google.com/
-docker run salrashid123/grpc_curl nghttp -vn https://www.google.com/
-```
-
-### Start the gRPC server:
-
-```
-docker run -p 50051:50051 salrashid123/grpc_curl  python /app/server.py
-```
-
-### Make the binary file with the delimited gRPC message:
-
-In a new window:
-
-```
-mkdir gcurl
-cd gcurl
-docker run -v `pwd`:/tmp/gcurl/ \
-    -t salrashid123/grpc_curl \
-    python /app/message_util.py write /tmp/gcurl/frame.bin
-```
-
-### Invoke the gRPC server with curl:
-
-then in the same window as above, transmit the generated file via curl:
-
-```
-docker run -v `pwd`:/tmp/gcurl/ \
-   --add-host main.esodemoapp2.com:127.0.0.1 \
-   --net=host  salrashid123/grpc_curl \
-      curl  -v  -k --raw -X POST --http2  \
-         -H "Content-Type: application/grpc" \
-         -H "TE: trailers" \
-         --data-binary @/tmp/gcurl/frame.bin \
-         https://main.esodemoapp2.com:50051/echo.EchoServer/SayHello -o /tmp/gcurl/resp.bin
-```
-
-The response is written into ```resp.bin```.
-
-### Verify the response message:
-
-Use docer to read in and decode ```resp.bin```.
-```
- docker run -v `pwd`:/tmp/gcurl/  -t salrashid123/grpc_curl python /app/message_util.py read /tmp/gcurl/resp.bin
-```
-
-ok, so now what you've done is generated a gRPC message, transmitted it via curl and decoded the response..
-
-all of this was done using embedded scripts prettymuch.....so how about doing this by hand?
-
-Lets do just that next:
-
----
-
-## Invoke gRPC with curl locally
-
-The following steps outlines how to call the gRPC server with curl if curl, protoc, gRPC server runs locally
-
-### Installing curl, if necessary
-
-
-If you would rather see what is happening in detail, the first step is to install curl and/or nghttp2 clients that are http/2 aware.
-
-NOTE: recent curl version have --http2 support already
-
-Verify curl is enabled with http/2:
-
-```bash
-curl -v --http2 https://www.google.com/
-* Using HTTP2, server supports multi-use
-* Connection state changed (HTTP/2 confirmed)
-```
-
-
-...otherwise, its lengthy..
-
-```bash
-apt-get update -y && \
-  apt-get install -y  unzip \
-    curl python openssl python-setuptools \
-    python-pip python-dev build-essential \
-    nghttp2 libnghttp2-dev  libssl-dev
-
-curl -OL https://curl.haxx.se/download/curl-7.54.0.tar.bz2 && \
-    tar -xvjf curl-7.54.0.tar.bz2 && \
-    cd curl-7.54.0 && \
-    ./configure --with-nghttp2 --with-ssl && \
-    make && \
-    make install && \    
-    ldconfig 
-```
 
 ---
 
@@ -260,8 +157,8 @@ curl -v  --raw -X POST --http2  \
 The response message is also in formatted so do the inverse of encoding
 
 ```bash
- xxd -p resp.bin 
-00000000120a1048656c6c6f2c206a6f686e20646f6521
+xxd -p resp.bin 
+    00000000120a1048656c6c6f2c206a6f686e20646f6521
 ```
 
 which is:
@@ -317,22 +214,6 @@ then
 # add server.domain.com to /etc/hosts 127.0.0.1
 
 python3 client.py server.domain.com 50051
-```
-
-
-#### Invoking using docker image
-
-THe same client-server python gRPC scripts are present in a docker image
-
-Server:
-
-```
-docker run -p 50051:50051 salrashid123/grpc_curl  python3 /app/server.py
-```
-
-Client
-```
-docker run --net=host --add-host server.domain.com:127.0.0.1 -t salrashid123/grpc_curl  python3 /app/client.py server.domain.com 50051
 ```
 
 

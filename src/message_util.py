@@ -11,9 +11,9 @@ def w(filename):
   req = echo_pb2.EchoRequest(firstname='john', lastname='doe')
   msg = binascii.b2a_hex(req.SerializeToString())
   ## wireformat
-  frame =  '00' + hex(len(msg)//2).lstrip("0x").zfill(8) + msg.decode("utf-8") 
+  # frame =  '00' + hex(len(msg)//2).lstrip("0x").zfill(8) + msg.decode("utf-8") 
   ## raw
-  #frame =  msg.decode("utf-8") 
+  frame =  msg.decode("utf-8") 
   print('Raw Encode: ' + frame)
   f = open(filename, "wb+")
   f.write(binascii.a2b_hex(frame))
